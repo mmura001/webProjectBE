@@ -68,7 +68,7 @@ router.post('/login', Validator('login'), async (req, res, next) => {
                                 res.status(200).json({ username: result[0].username, email: result[0].email })
                                 } else {
                                     res.status(403).send({error:{
-                                        message:"Wrong username/password combination!user already exists"} 
+                                        message:"Wrong email/password combination!"} 
                                     });
                                 }
                             });
