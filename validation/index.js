@@ -4,5 +4,6 @@ const {
   updateSchema: update,
 } = require("./auth.validation");
 const { insertSchema: insert } = require("./search.validator");
+const { generateKeySchema: generateKey } = require("./key.validation");
 
-module.exports = { login, signup, update, insert };
+module.exports = { login, signup, update, insert, generateKey };

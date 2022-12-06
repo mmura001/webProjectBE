@@ -9,6 +9,7 @@ const Validator = require("./middleware/Validator");
 // Import routes
 const authRouter = require("./routes/auth");
 const searchRouter = require("./routes/search");
+const keyRouter = require("./routes/key");
 
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
 //* Bind Routes
 app.use("/auth", authRouter);
 app.use("/search", searchRouter);
+app.use("/key", keyRouter);
 
 //* Catch HTTP 404
 app.use((req, res, next) => {
@@ -52,30 +54,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// search engine get request
-
-app.post("/searchengine", async (req, res) => {
-  const { title } = req.query;
-
-  console.log("query", req.query);
-  const options = {
-    url: "http://localhost:9200/wiki_library/_search",
-    body: {
-      query: {
-        match: {
-          title: "asp",
-        },
-      },
-      size: 1000,
-    },
-    json: true,
-  };
-  console.log({ options });
-  await fetch(options, function (err, data) {
-    // console.log(data,err);
-    res.send(data.body.hits);
-  });
-});
+// app.get();
 
 http.listen(8080, () => {
   console.log("running on port 8080");

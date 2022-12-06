@@ -4,12 +4,14 @@ const multer = require("multer");
 const uuid = require("uuid");
 const fs = require("fs").promises;
 const request = require("request-promise");
+const db = require("../db");
 
 const router = express.Router();
 const { Client } = require("elasticsearch");
 const Validator = require("../middleware/Validator");
 
 var client = new Client({ host: "localhost:9200" });
+const util = require("util");
 
 router.get("/searchengine", async (req, res) => {
   const { title } = req.query;
@@ -23,6 +25,15 @@ router.get("/searchengine", async (req, res) => {
         },
       },
     },
+    // {
+    //   body: {
+    //     query: {
+    //       match: {
+    //         body: something,
+    //       },
+    //     },
+    //   },
+    // },
     (error, response) => {
       console.log(response);
       res.json(response);
@@ -48,6 +59,71 @@ router.get("/searchengine", async (req, res) => {
   //     // console.log(data,err);
   //     res.send(data.body.hits);
   //   });
+});
+
+router.post("/searchengine", async (req, res) => {
+  const { title } = req.query;
+
+  console.log("query", req.query);
+  const options = {
+    url: "http://localhost:9200/wiki_library/_search",
+    body: {
+      query: {
+        match: {
+          title: "asp",
+        },
+      },
+      size: 1000,
+    },
+    json: true,
+  };
+  console.log({ options });
+  await fetch(options, function (err, data) {
+    // console.log(data,err);
+    res.send(data.body.hits);
+  });
+});
+
+function isNumeric(str) {
+  if (typeof str != "string") return false; // we only process strings!
+  return (
+    !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str))
+  ); // ...and ensure strings of whitespace fail
+}
+
+router.get("/searchWithKey", async (req, res) => {
+  let { key, query: searchQuery, range } = req.query;
+  const query = util.promisify(db.query).bind(db);
+  if (key && searchQuery) {
+    const result = await query("SELECT * from loginuser WHERE apiKey= ?;", key);
+    if (range) {
+      if (!isNumeric(range)) {
+        return res.status(400).json({ error: "Range should be a number" });
+      }
+      range = parseInt(range);
+    }
+    // Key Exists and user is found
+    if (result.length > 0) {
+      const response = await client.search({
+        body: {
+          size: range ? range : 1000,
+          query: {
+            match: {
+              title: searchQuery,
+            },
+          },
+        },
+      });
+      return res.status(200).json({ user: response });
+    }
+    // Key does not exist and user is not found
+    else {
+      return res.status(400).json({ error: "Invalid API Key" });
+    }
+  } else {
+    return res.status(400).json({ error: "Please Send Key & searchQuery" });
+  }
 });
 
 function pdfFilter(req, file, cb) {
